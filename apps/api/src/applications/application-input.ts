@@ -1,0 +1,75 @@
+import { BadRequestException } from '@nestjs/common';
+import { ApplicationStatus } from '@prisma/client';
+
+export interface ApplicationInput {
+  companyName?: string;
+  position?: string;
+  location?: string | null;
+  jobUrl?: string | null;
+  status?: ApplicationStatus;
+}
+
+export function parseApplicationInput(
+  body: unknown,
+  partial = false,
+): ApplicationInput {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    throw new BadRequestException('Expected an application object');
+  }
+  const input = body as Record<string, unknown>;
+  const allowed = ['companyName', 'position', 'location', 'jobUrl', 'status'];
+  if (
+    !Object.keys(input).length ||
+    Object.keys(input).some((key) => !allowed.includes(key))
+  ) {
+    throw new BadRequestException('Provide only supported application fields');
+  }
+  const result: ApplicationInput = {};
+  for (const key of [
+    'companyName',
+    'position',
+    'location',
+    'jobUrl',
+  ] as const) {
+    const value = input[key];
+    const required = key === 'companyName' || key === 'position';
+    if (value === undefined) {
+      if (required && !partial)
+        throw new BadRequestException(key + ' is required');
+      continue;
+    }
+    if (value === null && !required) {
+      result[key] = null;
+      continue;
+    }
+    if (
+      typeof value !== 'string' ||
+      value.trim().length > (key === 'jobUrl' ? 2048 : 200) ||
+      (required && !value.trim())
+    ) {
+      throw new BadRequestException(
+        key + ' must be a non-empty string of valid length',
+      );
+    }
+    result[key] = value.trim();
+  }
+  if (result.jobUrl) {
+    try {
+      const url = new URL(result.jobUrl);
+      if (!['http:', 'https:'].includes(url.protocol)) throw new Error();
+    } catch {
+      throw new BadRequestException('jobUrl must be an HTTP or HTTPS URL');
+    }
+  }
+  if (input.status !== undefined) {
+    if (
+      !Object.values(ApplicationStatus).includes(
+        input.status as ApplicationStatus,
+      )
+    ) {
+      throw new BadRequestException('Invalid application status');
+    }
+    result.status = input.status as ApplicationStatus;
+  }
+  return result;
+}
