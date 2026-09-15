@@ -4,6 +4,7 @@ import { ApplicationsController } from './applications.controller';
 import { ApplicationsService } from './applications.service';
 
 @Module({
+  exports: [PrismaService, ApplicationsService],
   controllers: [ApplicationsController],
   providers: [PrismaService, ApplicationsService],
 })

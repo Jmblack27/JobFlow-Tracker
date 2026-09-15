@@ -250,3 +250,233 @@ select:disabled {
     padding: 18px;
   }
 }
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 18px 36px;
+  background: white;
+  border-bottom: 1px solid #dce3e6;
+  font-size: 14px;
+}
+.site-nav .brand {
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #225d50;
+  margin-right: auto;
+}
+.site-nav a:hover,
+.text-link:hover {
+  text-decoration: underline;
+}
+.career-page {
+  max-width: 1500px;
+  margin: auto;
+}
+.career-panel {
+  background: white;
+  border: 1px solid #dce3e6;
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 22px;
+}
+.career-panel h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.career-panel h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 20px 0 10px;
+}
+.career-panel p {
+  line-height: 1.6;
+}
+.muted {
+  color: #62717c;
+  font-size: 13px;
+  margin: 8px 0 18px;
+}
+.profile-form fieldset,
+.resume-editor fieldset {
+  display: block;
+  margin: 0;
+}
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.profile-sections {
+  display: grid;
+  gap: 24px;
+}
+textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cdd7dd;
+  border-radius: 8px;
+  resize: vertical;
+  background: white;
+  color: #263c49;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.field-help {
+  font-size: 12px;
+  color: #62717c;
+  font-weight: 400;
+  line-height: 1.6;
+  margin: 6px 0 12px;
+}
+.career-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 24px;
+  align-items: start;
+}
+.back-link {
+  display: inline-block;
+  color: #225d50;
+  margin-bottom: 24px;
+  font-size: 13px;
+}
+.text-link,
+.card .resume-link {
+  color: #225d50;
+  text-decoration: underline;
+}
+.card .resume-link {
+  display: block;
+  margin-top: 16px;
+  font-weight: 600;
+  font-size: 13px;
+}
+.analysis-summary {
+  margin-top: 20px;
+  font-size: 14px;
+}
+.match {
+  border-left: 3px solid #6caa9a;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  background: #f6faf8;
+}
+.analysis-list {
+  list-style: disc;
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.analysis-list li {
+  margin-bottom: 8px;
+}
+.stale-notice {
+  background: #fff5de;
+  color: #795918;
+  padding: 12px;
+  margin-top: 16px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.evidence {
+  font-size: 12px;
+  color: #526a73;
+  margin: 8px 0 14px;
+}
+.evidence summary {
+  cursor: pointer;
+}
+.evidence blockquote {
+  white-space: pre-wrap;
+  border-left: 2px solid #c4d5d0;
+  padding: 8px 12px;
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+.history-label {
+  margin-top: 20px;
+}
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.status-pill {
+  color: #225d50;
+  background: #e3eee9;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+.resume-preview {
+  border: 1px solid #e1e6eb;
+  padding: 24px;
+  border-radius: 8px;
+}
+.resume-section {
+  border-top: 1px solid #e1e6eb;
+  margin-top: 18px;
+}
+.review-check {
+  flex-direction: row;
+  align-items: flex-start;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 20px 0;
+}
+.review-check input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+button.secondary {
+  background: #edf3f0;
+  color: #225d50;
+}
+button.secondary:hover {
+  background: #dce9e2;
+}
+@media (max-width: 950px) {
+  .career-columns {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 650px) {
+  .site-nav {
+    padding: 16px;
+    gap: 16px;
+  }
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+  .career-panel {
+    padding: 18px;
+  }
+  .resume-preview {
+    padding: 14px;
+  }
+}
+
+.profile-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--background);
+  padding: 16px 0;
+  border-bottom: 1px solid #dce3e6;
+}
+.profile-header button {
+  flex-shrink: 0;
+}
