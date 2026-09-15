@@ -1,0 +1,2 @@
+CREATE TYPE "JobCategory" AS ENUM ('IT', 'NON_IT', 'UNCATEGORIZED');
+ALTER TABLE "JobApplication" ADD COLUMN "category" "JobCategory" NOT NULL DEFAULT 'UNCATEGORIZED';

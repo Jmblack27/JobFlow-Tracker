@@ -137,3 +137,17 @@ provider endpoints are removed. The OpenAI SDK is no longer a dependency.
   JSON/code-fence parsing, evidence, validation, version edits and PDF pagination.
 - `pnpm --filter web test` includes the manual prompt/import/review/PDF flow with
   mocked HTTP responses, along with profile and board checks. Chromium is required.
+
+### Description-first application creation
+
+Choose **New application** on the board and paste a job offer. **Continue with ChatGPT** prepares a prompt using My Profile, without saving an application or calling an AI API. Copy it into ChatGPT, paste the JSON response, and choose **Preview application**. Review the extracted details, supported matches, gaps, and editable resume. Missing offer fields stay blank. **Save application & resume** stores the application, analysis, and resume together; final PDF review happens in the Resume section.
+
+Alternatively, fill in Company and Position and choose **Save without resume**. The pasted description is saved with the application. Board cards show the date and latest resume progress, and search filters by company or role. **Open details** provides Overview, Job description, and Resume sections.
+
+Draft endpoints: POST /application-drafts/prompt, POST /application-drafts/preview, and POST /application-drafts. Prompt and preview do not write records. Imports are tied to the current profile and exact offer; changed sources require a new prompt.
+
+### Job categories
+
+Applications support IT, Non-IT and Uncategorized independently of their status. Use the board filters to separate your searches, and change Job category in the creation form or Overview → Edit details. Existing applications default to Uncategorized; no roles are inferred during migration. ChatGPT can suggest a category from the actual duties, which you can correct before saving. Resume prompts support all fields and prioritize truthful transferable skills for non-IT roles.
+
+Apply the additive migration with `pnpm --filter api db:migrate`.

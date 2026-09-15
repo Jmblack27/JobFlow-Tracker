@@ -37,12 +37,7 @@ export type Resume = {
   reviewedAt: string | null;
 };
 export type Workspace = {
-  application: {
-    id: string;
-    position: string;
-    company: { name: string };
-    jobDescription: string | null;
-  };
+  application: import("./applications").Application;
   analysis: Analysis | null;
   resumes: Resume[];
   analysisCurrent: boolean;

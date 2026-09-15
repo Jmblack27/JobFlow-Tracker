@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { ApplicationStatus } from '@prisma/client';
+import { ApplicationStatus, JobCategory } from '@prisma/client';
 
 export interface ApplicationInput {
   companyName?: string;
@@ -7,6 +7,8 @@ export interface ApplicationInput {
   location?: string | null;
   jobUrl?: string | null;
   status?: ApplicationStatus;
+  category?: JobCategory;
+  jobDescription?: string | null;
 }
 
 export function parseApplicationInput(
@@ -17,7 +19,15 @@ export function parseApplicationInput(
     throw new BadRequestException('Expected an application object');
   }
   const input = body as Record<string, unknown>;
-  const allowed = ['companyName', 'position', 'location', 'jobUrl', 'status'];
+  const allowed = [
+    'companyName',
+    'position',
+    'location',
+    'jobUrl',
+    'status',
+    'jobDescription',
+    'category',
+  ];
   if (
     !Object.keys(input).length ||
     Object.keys(input).some((key) => !allowed.includes(key))
@@ -53,6 +63,17 @@ export function parseApplicationInput(
     }
     result[key] = value.trim();
   }
+  if (input.jobDescription !== undefined) {
+    if (input.jobDescription === null) result.jobDescription = null;
+    else if (
+      typeof input.jobDescription !== 'string' ||
+      input.jobDescription.trim().length > 20000
+    )
+      throw new BadRequestException(
+        'Job description must be at most 20,000 characters',
+      );
+    else result.jobDescription = input.jobDescription.trim() || null;
+  }
   if (result.jobUrl) {
     try {
       const url = new URL(result.jobUrl);
@@ -70,6 +91,11 @@ export function parseApplicationInput(
       throw new BadRequestException('Invalid application status');
     }
     result.status = input.status as ApplicationStatus;
+  }
+  if (input.category !== undefined) {
+    if (!Object.values(JobCategory).includes(input.category as JobCategory))
+      throw new BadRequestException('Invalid job category');
+    result.category = input.category as JobCategory;
   }
   return result;
 }
