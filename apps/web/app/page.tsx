@@ -2,27 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { FormEvent } from "react";
 
-const stages = [
-  ["WISHLIST", "Wishlist"],
-  ["APPLIED", "Applied"],
-  ["SCREENING", "Screening"],
-  ["TECHNICAL_INTERVIEW", "Technical interview"],
-  ["FINAL_INTERVIEW", "Final interview"],
-  ["OFFER", "Offer"],
-  ["REJECTED", "Rejected"],
-  ["WITHDRAWN", "Withdrawn"],
-] as const;
-type Status = (typeof stages)[number][0];
-type Application = {
-  id: string;
-  position: string;
-  company: { name: string };
-  location: string | null;
-  jobUrl: string | null;
-  status: Status;
-};
+import NewApplication from "./new-application";
+import { stages, categories } from "./lib/applications";
+import type { Application, Status, Category } from "./lib/applications";
 
 async function api<T>(path = "", options?: RequestInit): Promise<T> {
   const response = await fetch("/api/applications" + path, {
@@ -47,7 +30,9 @@ export default function Home() {
   const [loadError, setLoadError] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [category, setCategory] = useState<Category | "ALL">("ALL");
+  const [search, setSearch] = useState("");
   const [moving, setMoving] = useState<string[]>([]);
 
   async function load() {
@@ -75,32 +60,6 @@ export default function Home() {
       });
     return () => controller.abort();
   }, []);
-
-  async function create(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const fields = new FormData(form);
-    setSaving(true);
-    setError("");
-    setNotice("");
-    try {
-      const application = await api<Application>("", {
-        method: "POST",
-        body: JSON.stringify(Object.fromEntries(fields)),
-      });
-      setApplications((current) => [application, ...current]);
-      form.reset();
-      setNotice("Application added.");
-    } catch (error) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Unable to create application.",
-      );
-    } finally {
-      setSaving(false);
-    }
-  }
 
   async function move(application: Application, status: Status) {
     setMoving((current) => [...current, application.id]);
@@ -140,65 +99,60 @@ export default function Home() {
             offer.
           </p>
         </div>
-        <span className="total">{applications.length} opportunities</span>
-      </header>
-      <section className="create-panel" aria-labelledby="create-title">
-        <div>
-          <h2 id="create-title">Add an opportunity</h2>
-          <p>
-            Start with a company and a role. Make the next move when you’re
-            ready.
-          </p>
+        <div className="action-row">
+          <span className="total">{applications.length} opportunities</span>
+          <button onClick={() => setCreating(true)}>+ New application</button>
         </div>
-        <form onSubmit={create}>
-          <fieldset disabled={saving || loading || !!loadError}>
-            <label>
-              Company{" "}
-              <input
-                name="companyName"
-                required
-                maxLength={200}
-                placeholder="Acme"
-              />
-            </label>
-            <label>
-              Position{" "}
-              <input
-                name="position"
-                required
-                maxLength={200}
-                placeholder="Product engineer"
-              />
-            </label>
-            <label>
-              Location{" "}
-              <input name="location" maxLength={200} placeholder="Remote" />
-            </label>
-            <label>
-              Job link{" "}
-              <input
-                name="jobUrl"
-                type="url"
-                maxLength={2048}
-                placeholder="https://"
-              />
-            </label>
-            <label>
-              Stage{" "}
-              <select name="status" defaultValue="WISHLIST">
-                {stages.map(([value, label]) => (
-                  <option value={value} key={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button type="submit">
-              {saving ? "Adding…" : "+ Add application"}
-            </button>
-          </fieldset>
-        </form>
+      </header>
+      {creating && (
+        <NewApplication
+          onClose={() => setCreating(false)}
+          onCreated={(application) => {
+            setApplications((current) => [application, ...current]);
+            setCreating(false);
+            setCategory("ALL");
+            setSearch("");
+            setNotice(
+              application.resumes?.length
+                ? "Application and resume saved. Open details to review and download PDF."
+                : "Application saved. You can prepare a resume from its details.",
+            );
+          }}
+        />
+      )}
+      <section className="board-toolbar" aria-label="Board tools">
+        <label>
+          Find an application
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by role or company…"
+          />
+        </label>
+        <p>Start with an offer. Track each step. Prepare your next move.</p>
       </section>
+      <nav className="category-filters" aria-label="Job categories">
+        {([["ALL", "All roles"], ...categories] as const).map(
+          ([value, label]) => (
+            <button
+              className="secondary"
+              key={value}
+              aria-pressed={category === value}
+              onClick={() => setCategory(value)}
+            >
+              {label}{" "}
+              <span>
+                {
+                  applications.filter(
+                    (a) => value === "ALL" || a.category === value,
+                  ).length
+                }
+              </span>
+            </button>
+          ),
+        )}
+      </nav>
       <div className="feedback" aria-live="polite">
         {notice}
       </div>
@@ -218,13 +172,19 @@ export default function Home() {
         <>
           {applications.length === 0 && (
             <p className="empty-board">
-              Your next chapter starts here. Add your first application above.
+              Your next chapter starts here. Select New application to paste
+              your first offer.
             </p>
           )}
           <div className="board" aria-label="Applications by stage">
             {stages.map(([status, label]) => {
               const items = applications.filter(
-                (item) => item.status === status,
+                (item) =>
+                  item.status === status &&
+                  (category === "ALL" || item.category === category) &&
+                  (item.position + " " + item.company.name)
+                    .toLowerCase()
+                    .includes(search.toLowerCase()),
               );
               return (
                 <section
@@ -242,8 +202,31 @@ export default function Home() {
                   )}
                   {items.map((application) => (
                     <article className="card" key={application.id}>
+                      <p className="card-category">
+                        {categories.find(
+                          ([value]) => value === application.category,
+                        )?.[1] || "Uncategorized"}
+                      </p>
                       <p className="company">{application.company.name}</p>
-                      <h3>{application.position}</h3>
+                      <h3>
+                        <Link href={"/applications/" + application.id}>
+                          {application.position}
+                        </Link>
+                      </h3>
+                      <p className="card-meta">
+                        Added{" "}
+                        {new Date(application.createdAt).toLocaleDateString(
+                          "en-US",
+                          { month: "short", day: "numeric" },
+                        )}
+                      </p>
+                      <span className="status-pill">
+                        {application.resumes?.[0]?.reviewedAt
+                          ? "PDF ready"
+                          : application.resumes?.length
+                            ? "Resume draft"
+                            : "Resume not started"}
+                      </span>
                       {application.location && (
                         <p className="location">{application.location}</p>
                       )}
@@ -285,7 +268,7 @@ export default function Home() {
                         className="resume-link"
                         href={"/applications/" + application.id}
                       >
-                        Prepare resume →
+                        Open details →
                       </Link>
                     </article>
                   ))}

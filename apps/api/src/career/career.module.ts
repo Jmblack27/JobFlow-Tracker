@@ -1,3 +1,7 @@
+import {
+  ApplicationDraftsController,
+  ApplicationDraftsService,
+} from './application-drafts';
 import { Module } from '@nestjs/common';
 import { ApplicationsModule } from '../applications/applications.module';
 import { CareerController } from './career.controller';
@@ -7,7 +11,12 @@ import { ResumePdfService } from './resume-pdf.service';
 
 @Module({
   imports: [ApplicationsModule],
-  controllers: [CareerController],
-  providers: [CareerService, ProfileService, ResumePdfService],
+  controllers: [CareerController, ApplicationDraftsController],
+  providers: [
+    ApplicationDraftsService,
+    CareerService,
+    ProfileService,
+    ResumePdfService,
+  ],
 })
 export class CareerModule {}

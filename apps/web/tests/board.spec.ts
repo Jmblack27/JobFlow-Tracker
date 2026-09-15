@@ -19,6 +19,8 @@ test("creates, moves across all stages, and reloads applications", async ({
       applications.push({
         ...data,
         id: "demo-id",
+        createdAt: "2026-09-15T12:00:00.000Z",
+        resumes: [],
         company: { name: data.companyName },
       });
       await route.fulfill({ status: 201, json: applications[0] });
@@ -33,9 +35,10 @@ test("creates, moves across all stages, and reloads applications", async ({
   await expect(
     page.getByText("Your next chapter starts here.", { exact: false }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "+ New application" }).click();
   await page.getByLabel("Company", { exact: true }).fill("Acme");
   await page.getByLabel("Position", { exact: true }).fill("Engineer");
-  await page.getByRole("button", { name: "+ Add application" }).click();
+  await page.getByRole("button", { name: "Save without resume" }).click();
   await expect(
     page
       .getByRole("region", { name: "Wishlist", exact: true })
@@ -80,13 +83,16 @@ test("retains input and card status when mutations fail", async ({ page }) => {
     }
   });
   await page.goto("/");
+  await page.getByRole("button", { name: "+ New application" }).click();
   await page.getByLabel("Company", { exact: true }).fill("Example");
   await page.getByLabel("Position", { exact: true }).fill("Designer");
-  await page.getByRole("button", { name: "+ Add application" }).click();
+  await page.getByRole("button", { name: "Save without resume" }).click();
   await expect(page.getByRole("alert")).toHaveText("Please retry");
   await expect(page.getByLabel("Company", { exact: true })).toHaveValue(
     "Example",
   );
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await page.getByRole("button", { name: "Discard draft" }).click();
   await page.getByLabel("Stage for Engineer at Acme").selectOption("OFFER");
   await expect(page.getByRole("alert")).toHaveText("Please retry");
   await expect(page.getByLabel("Stage for Engineer at Acme")).toHaveValue(

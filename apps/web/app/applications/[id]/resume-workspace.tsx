@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { request, errorMessage } from "../../lib/career";
 import type { Workspace, Resume } from "../../lib/career";
+import ApplicationOverview from "./application-overview";
 import ResumeEditor, { Evidence } from "./resume-editor";
 
 export default function ResumeWorkspace({ id }: { id: string }) {
+  const [section, setSection] = useState("Overview");
   const [data, setData] = useState<Workspace | null>(null);
   const [description, setDescription] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -175,10 +177,60 @@ export default function ResumeWorkspace({ id }: { id: string }) {
                 Edit My Profile ↗
               </Link>
             </header>
-            <div className="career-columns">
+            <nav
+              className="workspace-navigation"
+              aria-label="Application sections"
+            >
+              {["Overview", "Job description", "Resume"].map((name) => (
+                <button
+                  key={name}
+                  className="secondary"
+                  aria-pressed={section === name}
+                  onClick={() => setSection(name)}
+                >
+                  {name}
+                  {name === "Resume" && data.resumes.length
+                    ? " · " + data.resumes.length
+                    : ""}
+                </button>
+              ))}
+            </nav>
+            <div hidden={section !== "Overview"}>
+              <ApplicationOverview
+                application={data.application}
+                onSaved={(application) => {
+                  setData({ ...data, application });
+                  setNotice("Application details saved.");
+                }}
+              />
+              <section className="career-panel">
+                <h2>Your next step</h2>
+                <p className="muted">
+                  {data.resumes.length
+                    ? "Your resume draft is saved. Review it and confirm the final version to download PDF."
+                    : "Add the offer and prepare a resume using your professional profile."}
+                </p>
+                <button
+                  onClick={() =>
+                    setSection(
+                      data.application.jobDescription
+                        ? "Resume"
+                        : "Job description",
+                    )
+                  }
+                >
+                  {data.resumes.length ? "Review resume →" : "Prepare resume →"}
+                </button>
+              </section>
+            </div>
+            <div>
               <div>
-                <section className="career-panel" aria-label="Job description">
-                  <h2>1. Save the job description</h2>
+                <section
+                  hidden={section !== "Job description"}
+                  className="career-panel"
+                  aria-label="Job description"
+                >
+                  <h2>Job description</h2>
                   <p className="muted">
                     Paste the full offer, including responsibilities and
                     requirements.
@@ -208,8 +260,12 @@ export default function ResumeWorkspace({ id }: { id: string }) {
                     {busy === "description" ? "Saving…" : "Save description"}
                   </button>
                 </section>
-                <section className="career-panel" aria-label="ChatGPT prompt">
-                  <h2>2. Copy your prompt to ChatGPT</h2>
+                <section
+                  hidden={section !== "Resume"}
+                  className="career-panel"
+                  aria-label="ChatGPT prompt"
+                >
+                  <h2>Copy your prompt to ChatGPT</h2>
                   {!data.hasProfile && (
                     <p className="empty-board">
                       Start by saving{" "}
@@ -237,8 +293,8 @@ export default function ResumeWorkspace({ id }: { id: string }) {
                   </button>
                   {dirtyDescription && (
                     <p className="field-help">
-                      Save the description before preparing a prompt or
-                      importing a response.
+                      Open Job description and save your changes before
+                      preparing a prompt or importing a response.
                     </p>
                   )}
                   {prompt && (
@@ -278,7 +334,11 @@ export default function ResumeWorkspace({ id }: { id: string }) {
                   )}
                 </section>
                 {data.analysis && (
-                  <section className="career-panel" aria-label="Offer analysis">
+                  <section
+                    hidden={section !== "Overview"}
+                    className="career-panel"
+                    aria-label="Offer analysis"
+                  >
                     <h2>Imported offer analysis</h2>
                     {(!data.analysisCurrent || dirtyDescription) && (
                       <p className="stale-notice">
@@ -333,9 +393,10 @@ export default function ResumeWorkspace({ id }: { id: string }) {
               <div>
                 <section
                   className="career-panel"
+                  hidden={section !== "Resume"}
                   aria-label="Import ChatGPT response"
                 >
-                  <h2>3. Paste the response</h2>
+                  <h2>Paste the response</h2>
                   <p className="muted">
                     Copy the complete response from ChatGPT, including the JSON
                     block. JobFlow validates it and turns it into an editable
@@ -375,8 +436,12 @@ export default function ResumeWorkspace({ id }: { id: string }) {
                     </p>
                   )}
                 </section>
-                <section className="career-panel" aria-label="Resume history">
-                  <h2>4. Review & download PDF</h2>
+                <section
+                  hidden={section !== "Resume"}
+                  className="career-panel"
+                  aria-label="Resume history"
+                >
+                  <h2>Review & download PDF</h2>
                   <p className="muted">
                     Each import creates a separate version. Edit the draft,
                     confirm your review and save to download a PDF.
@@ -405,28 +470,30 @@ export default function ResumeWorkspace({ id }: { id: string }) {
                   )}
                 </section>
                 {activeResume && (
-                  <ResumeEditor
-                    key={activeResume.id + activeResume.updatedAt}
-                    resume={activeResume}
-                    applicationId={id}
-                    onDirty={setEditorDirty}
-                    onSaved={(saved) => {
-                      setData(
-                        (current) =>
-                          current && {
-                            ...current,
-                            resumes: current.resumes.map((r) =>
-                              r.id === saved.id ? saved : r,
-                            ),
-                          },
-                      );
-                      setNotice(
-                        saved.reviewedAt
-                          ? "Reviewed resume saved. PDF download is ready."
-                          : "Draft saved.",
-                      );
-                    }}
-                  />
+                  <div hidden={section !== "Resume"}>
+                    <ResumeEditor
+                      key={activeResume.id + activeResume.updatedAt}
+                      resume={activeResume}
+                      applicationId={id}
+                      onDirty={setEditorDirty}
+                      onSaved={(saved) => {
+                        setData(
+                          (current) =>
+                            current && {
+                              ...current,
+                              resumes: current.resumes.map((r) =>
+                                r.id === saved.id ? saved : r,
+                              ),
+                            },
+                        );
+                        setNotice(
+                          saved.reviewedAt
+                            ? "Reviewed resume saved. PDF download is ready."
+                            : "Draft saved.",
+                        );
+                      }}
+                    />
+                  </div>
                 )}
               </div>
             </div>

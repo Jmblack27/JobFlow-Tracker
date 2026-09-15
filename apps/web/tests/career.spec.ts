@@ -140,13 +140,18 @@ test("prepares a prompt, imports a response, reviews and downloads PDF", async (
     return route.fulfill({ status: 404 });
   });
   await page.goto("/applications/" + applicationId);
+  await page.getByRole("button", { name: "Resume", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Prepare prompt" }),
   ).toBeDisabled();
   await page
+    .getByRole("button", { name: "Job description", exact: true })
+    .click();
+  await page
     .getByRole("textbox", { name: "Job description", exact: true })
     .fill(description);
   await page.getByRole("button", { name: "Save description" }).click();
+  await page.getByRole("button", { name: "Resume", exact: true }).click();
   await page.getByRole("button", { name: "Prepare prompt" }).click();
   await expect(page.getByLabel("Prompt to copy")).toHaveValue(
     "Prepare an English resume using only supported experience.",
@@ -169,7 +174,9 @@ test("prepares a prompt, imports a response, reviews and downloads PDF", async (
       }),
     );
   await page.getByRole("button", { name: "Import resume" }).click();
+  await page.getByRole("button", { name: "Overview", exact: true }).click();
   await expect(page.getByText("AWS", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Resume · 1", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Download PDF" }),
   ).toBeDisabled();
@@ -183,6 +190,7 @@ test("prepares a prompt, imports a response, reviews and downloads PDF", async (
   await page.getByRole("button", { name: "Download PDF" }).click();
   expect((await download).suggestedFilename()).toBe("resume.pdf");
   await page.reload();
+  await page.getByRole("button", { name: "Resume · 1", exact: true }).click();
   await expect(page.getByLabel("Professional summary")).toHaveValue(
     "My reviewed summary.",
   );
@@ -283,4 +291,96 @@ test("keeps section edits open after a failed save", async ({ page }) => {
   await expect(
     dialog.getByRole("button", { name: "Save changes", exact: true }),
   ).toBeEnabled();
+});
+
+test("previews an offer before creating an application and retains failed saves", async ({
+  page,
+}) => {
+  let writes = 0;
+  let fail = true;
+  const result = {
+    sourceId: "a".repeat(64),
+    application: {
+      companyName: "",
+      position: "Support specialist",
+      location: "Remote",
+      jobUrl: "",
+    },
+    analysis: {
+      roleSummary: "Support role",
+      matchingSkills: [],
+      missingRequirements: ["Phone support"],
+      questions: [],
+    },
+    resume: content,
+  };
+  await page.route("**/api/applications", (route) =>
+    route.fulfill({ json: [] }),
+  );
+  await page.route("**/api/application-drafts**", async (route) => {
+    const url = route.request().url();
+    if (url.endsWith("/prompt"))
+      return route.fulfill({
+        json: { prompt: "Extract the offer and draft a truthful resume." },
+      });
+    if (url.endsWith("/preview")) {
+      if (route.request().postDataJSON().response === "broken")
+        return route.fulfill({
+          status: 400,
+          json: { message: "Copy the complete JSON block." },
+        });
+      return route.fulfill({ json: result });
+    }
+    writes++;
+    if (fail)
+      return route.fulfill({ status: 503, json: { message: "Please retry" } });
+    const input = route.request().postDataJSON();
+    return route.fulfill({
+      status: 201,
+      json: {
+        ...input.application,
+        id: "draft-id",
+        company: { name: input.application.companyName },
+        createdAt: "2026-09-15T12:00:00.000Z",
+        resumes: [{ id: "resume-id", reviewedAt: null }],
+      },
+    });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "+ New application" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Job description", { exact: true }).fill(description);
+  await dialog.getByRole("button", { name: "Continue with ChatGPT" }).click();
+  await dialog.getByLabel("ChatGPT response").fill("broken");
+  await dialog.getByRole("button", { name: "Preview application" }).click();
+  await expect(dialog.getByRole("alert")).toContainText("complete JSON");
+  await expect(dialog.getByLabel("ChatGPT response")).toHaveValue("broken");
+  await dialog.getByLabel("ChatGPT response").fill(JSON.stringify(result));
+  await dialog.getByRole("button", { name: "Preview application" }).click();
+  await expect(dialog.getByLabel("Company", { exact: true })).toHaveValue("");
+  expect(writes).toBe(0);
+  await dialog.getByLabel("Company", { exact: true }).fill("Reviewed company");
+  await dialog.getByLabel("Summary", { exact: true }).fill("Reviewed summary.");
+  await page.keyboard.press("Escape");
+  await expect(
+    dialog.getByText("Discard this application draft?"),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "Keep editing" }).click();
+  await dialog
+    .getByRole("button", { name: "Save application & resume" })
+    .click();
+  await expect(dialog.getByRole("alert")).toContainText("Please retry");
+  await expect(dialog.getByLabel("Summary", { exact: true })).toHaveValue(
+    "Reviewed summary.",
+  );
+  fail = false;
+  await dialog
+    .getByRole("button", { name: "Save application & resume" })
+    .click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByText("Resume draft", { exact: true })).toBeVisible();
+  await page.getByLabel("Find an application").fill("no matches");
+  await expect(
+    page.getByRole("heading", { name: "Support specialist" }),
+  ).not.toBeVisible();
 });

@@ -46,6 +46,12 @@ model Company {
   applications JobApplication[]
 }
 
+enum JobCategory {
+  IT
+  NON_IT
+  UNCATEGORIZED
+}
+
 model JobApplication {
   id String @id @default(uuid())
 
@@ -60,6 +66,7 @@ model JobApplication {
   location       String?
 
   status ApplicationStatus @default(WISHLIST)
+  category JobCategory @default(UNCATEGORIZED)
 
   salaryMin Int?
   salaryMax Int?

@@ -5,7 +5,14 @@ import type { ApplicationInput } from './application-input';
 
 // The first slice is a single-user local workspace, pending authentication.
 import { DEMO_EMAIL as demoEmail } from '../local-user';
-const include = { company: true } as const;
+const include = {
+  company: true,
+  resumes: {
+    select: { id: true, reviewedAt: true },
+    orderBy: [{ createdAt: 'desc' as const }, { id: 'asc' as const }],
+    take: 1,
+  },
+} satisfies Prisma.JobApplicationInclude;
 
 @Injectable()
 export class ApplicationsService {

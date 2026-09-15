@@ -480,3 +480,77 @@ button.secondary:hover {
 .profile-header button {
   flex-shrink: 0;
 }
+
+.board-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  background: #fff;
+  border: 1px solid #dce3e6;
+  border-radius: 14px;
+  padding: 20px 24px;
+}
+.board-toolbar label {
+  width: min(100%, 380px);
+}
+.board-toolbar p,
+.card-meta {
+  font-size: 12px;
+  color: #62717c;
+  margin-bottom: 12px;
+}
+.card h3 a {
+  font-size: 16px;
+  color: #192b36;
+  text-decoration: none;
+}
+.card h3 a:hover {
+  text-decoration: underline;
+}
+.card .status-pill {
+  display: inline-block;
+  font-size: 10px;
+  margin-bottom: 12px;
+}
+.workspace-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #dce3e6;
+  padding-bottom: 12px;
+}
+.workspace-navigation button[aria-pressed="true"] {
+  background: #225d50;
+  color: white;
+}
+@media (max-width: 650px) {
+  .board-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+.category-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+.category-filters button[aria-pressed="true"] {
+  background: #225d50;
+  color: #fff;
+}
+.category-filters span {
+  margin-left: 6px;
+  opacity: 0.8;
+}
+.card-category {
+  font-size: 10px;
+  font-weight: 700;
+  color: #526a73;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}

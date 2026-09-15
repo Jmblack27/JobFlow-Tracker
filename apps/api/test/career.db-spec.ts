@@ -36,6 +36,7 @@ describe('Manual ChatGPT workflow with real PostgreSQL', () => {
       for (const migration of [
         '20260813005030_init',
         '20260912163000_add_career_workspace',
+        '20260915190000_add_job_category',
       ]) {
         await connection.query(
           await readFile(
@@ -188,5 +189,156 @@ describe('Manual ChatGPT workflow with real PostgreSQL', () => {
     expect(await prisma.resumeVersion.count()).toBe(0);
     expect(await prisma.applicationAnalysis.count()).toBe(0);
     expect(await prisma.professionalProfile.count()).toBe(1);
+  });
+  it('previews without writes and saves a description-first application with its resume', async () => {
+    const http = app.getHttpServer() as App;
+    await request(http).put('/profile').send(profileFixture).expect(200);
+    const before = await prisma.jobApplication.count();
+    const prepared = await request(http)
+      .post('/application-drafts/prompt')
+      .send({ jobDescription: descriptionFixture })
+      .expect(201);
+    const prompt = prepared.body as { sourceId: string; prompt: string };
+    expect(prompt.prompt).toContain('companyName');
+    expect(prompt.prompt).not.toContain(profileFixture.email);
+    const result = {
+      sourceId: prompt.sourceId,
+      application: {
+        companyName: '',
+        position: 'Engineer',
+        location: '',
+        jobUrl: '',
+      },
+      analysis: analysisFixture,
+      resume: resumeFixture,
+    };
+    const input = {
+      jobDescription: descriptionFixture,
+      response: JSON.stringify(result),
+    };
+    await request(http)
+      .post('/application-drafts/preview')
+      .send(input)
+      .expect(201);
+    expect(await prisma.jobApplication.count()).toBe(before);
+    const application = {
+      ...result.application,
+      companyName: 'Reviewed company',
+      category: 'NON_IT',
+      status: 'WISHLIST',
+    };
+    await request(http)
+      .post('/application-drafts')
+      .send({ ...input, application: { ...application, companyName: '' } })
+      .expect(400);
+    await request(http)
+      .post('/application-drafts')
+      .send({
+        ...input,
+        application: { ...application, jobUrl: 'javascript:alert(1)' },
+      })
+      .expect(400);
+    await request(http)
+      .post('/application-drafts/preview')
+      .send({ ...input, response: 'incomplete JSON' })
+      .expect(400);
+    await request(http)
+      .post('/application-drafts/preview')
+      .send({
+        ...input,
+        jobDescription: descriptionFixture + ' Changed offer.',
+      })
+      .expect(409);
+    await request(http)
+      .post('/application-drafts/preview')
+      .send({
+        ...input,
+        response: JSON.stringify({
+          ...result,
+          resume: {
+            ...resumeFixture,
+            summary: {
+              text: 'Invented claim',
+              evidence: [
+                { section: 'skills', quote: 'unrelated fabricated evidence' },
+              ],
+            },
+          },
+        }),
+      })
+      .expect(400);
+    await request(http)
+      .put('/profile')
+      .send({ ...profileFixture, skills: 'Changed skills' })
+      .expect(200);
+    await request(http)
+      .post('/application-drafts')
+      .send({ ...input, application })
+      .expect(409);
+    expect(await prisma.jobApplication.count()).toBe(before);
+    await request(http).put('/profile').send(profileFixture).expect(200);
+    const saved = await request(http)
+      .post('/application-drafts')
+      .send({ ...input, application })
+      .expect(201);
+    const body = saved.body as {
+      id: string;
+      resumes: { id: string; reviewedAt: string | null }[];
+    };
+    expect(saved.body).toMatchObject({
+      position: 'Engineer',
+      company: { name: 'Reviewed company' },
+      jobDescription: descriptionFixture,
+    });
+    expect(saved.body).toMatchObject({ category: 'NON_IT' });
+    await request(http)
+      .patch('/applications/' + body.id)
+      .send({ category: 'IT' })
+      .expect(200);
+    await request(http)
+      .patch('/applications/' + body.id)
+      .send({ category: 'INVALID' })
+      .expect(400);
+    const categorized = await request(http)
+      .get('/applications/' + body.id)
+      .expect(200);
+    expect(categorized.body).toMatchObject({
+      category: 'IT',
+      status: 'WISHLIST',
+    });
+    expect(body.resumes).toHaveLength(1);
+    expect(body.resumes[0].reviewedAt).toBeNull();
+    const workspace = await request(http)
+      .get('/applications/' + body.id + '/resume-workspace')
+      .expect(200);
+    expect(workspace.body).toMatchObject({
+      analysisCurrent: true,
+      analysis: { content: analysisFixture },
+      resumes: [{ content: resumeFixture }],
+    });
+    await request(http)
+      .get(
+        '/applications/' + body.id + '/resumes/' + body.resumes[0].id + '/pdf',
+      )
+      .expect(409);
+    await request(http)
+      .delete('/applications/' + body.id)
+      .expect(204);
+    const manual = await request(http)
+      .post('/applications')
+      .send({
+        companyName: 'Manual',
+        position: 'Support',
+        jobDescription: descriptionFixture,
+      })
+      .expect(201);
+    expect(manual.body).toMatchObject({
+      jobDescription: descriptionFixture,
+      resumes: [],
+      category: 'UNCATEGORIZED',
+    });
+    await request(http)
+      .delete('/applications/' + (manual.body as { id: string }).id)
+      .expect(204);
   });
 });
