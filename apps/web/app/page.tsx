@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 
@@ -280,6 +281,12 @@ export default function Home() {
                       {moving.includes(application.id) && (
                         <p role="status">Moving…</p>
                       )}
+                      <Link
+                        className="resume-link"
+                        href={"/applications/" + application.id}
+                      >
+                        Prepare resume →
+                      </Link>
                     </article>
                   ))}
                 </section>

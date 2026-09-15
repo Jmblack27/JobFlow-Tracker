@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { ApplicationInput } from './application-input';
 
 // The first slice is a single-user local workspace, pending authentication.
-const demoEmail = 'demo@jobflow.local';
+import { DEMO_EMAIL as demoEmail } from '../local-user';
 const include = { company: true } as const;
 
 @Injectable()

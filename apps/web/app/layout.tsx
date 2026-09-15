@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -13,7 +14,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <nav className="site-nav" aria-label="Main navigation">
+          <Link href="/" className="brand">
+            JOBFLOW
+          </Link>
+          <Link href="/">Applications</Link>
+          <Link href="/profile">My Profile</Link>
+        </nav>
+        {children}
+      </body>
     </html>
   );
 }
