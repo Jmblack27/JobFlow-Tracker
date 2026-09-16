@@ -14,6 +14,7 @@ datasource db {
 enum ApplicationStatus {
   WISHLIST
   APPLIED
+  APPLIED_PENDING_TEST
   SCREENING
   TECHNICAL_INTERVIEW
   FINAL_INTERVIEW
@@ -58,6 +59,7 @@ model JobApplication {
   userId    String
   companyId String
 
+  platform       String?
   jobDescription String?
   analyses       ApplicationAnalysis[]
   resumes        ResumeVersion[]

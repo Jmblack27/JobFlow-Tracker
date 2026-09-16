@@ -6,6 +6,8 @@ type Application = {
   company: { name: string };
   location: string | null;
   jobUrl: string | null;
+  createdAt?: string;
+  resumes?: unknown[];
 };
 
 test("creates, moves across all stages, and reloads applications", async ({
@@ -41,11 +43,12 @@ test("creates, moves across all stages, and reloads applications", async ({
   await page.getByRole("button", { name: "Save without resume" }).click();
   await expect(
     page
-      .getByRole("region", { name: "Wishlist", exact: true })
-      .getByRole("heading", { name: "Engineer" }),
+      .getByRole("table", { name: "Applications", exact: true })
+      .getByRole("link", { name: "Engineer", exact: true }),
   ).toBeVisible();
-  for (const [status, name] of [
+  for (const [status] of [
     ["APPLIED", "Applied"],
+    ["APPLIED_PENDING_TEST", "Applied — technical test pending"],
     ["SCREENING", "Screening"],
     ["TECHNICAL_INTERVIEW", "Technical interview"],
     ["FINAL_INTERVIEW", "Final interview"],
@@ -55,14 +58,14 @@ test("creates, moves across all stages, and reloads applications", async ({
     ["WISHLIST", "Wishlist"],
   ]) {
     await page.getByLabel("Stage for Engineer at Acme").selectOption(status);
-    await expect(
-      page
-        .getByRole("region", { name, exact: true })
-        .getByRole("heading", { name: "Engineer" }),
-    ).toBeVisible();
+    await expect(page.getByLabel("Stage for Engineer at Acme")).toHaveValue(
+      status,
+    );
   }
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Engineer" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Engineer", exact: true }),
+  ).toBeVisible();
 });
 
 test("retains input and card status when mutations fail", async ({ page }) => {
@@ -116,4 +119,60 @@ test("retries a failed initial load", async ({ page }) => {
   await expect(
     page.getByText("Your next chapter starts here.", { exact: false }),
   ).toBeVisible();
+});
+
+test("filters the table while dashboard totals remain global", async ({
+  page,
+}) => {
+  await page.route("**/api/applications", (route) =>
+    route.fulfill({
+      json: [
+        {
+          id: "1",
+          position: "Engineer",
+          company: { name: "Acme" },
+          category: "IT",
+          status: "APPLIED",
+          createdAt: "2026-09-15T12:00:00Z",
+          resumes: [],
+        },
+        {
+          id: "2",
+          position: "Cashier",
+          company: { name: "Market" },
+          category: "NON_IT",
+          status: "REJECTED",
+          createdAt: "2026-09-14T12:00:00Z",
+          resumes: [],
+        },
+      ],
+    }),
+  );
+  await page.goto("/");
+  await expect(
+    page.getByRole("article", { name: "Total opportunities", exact: true }),
+  ).toContainText("2");
+  await expect(
+    page.getByRole("article", { name: "Responses", exact: true }),
+  ).toContainText("1");
+  await page.getByLabel("Job category", { exact: true }).selectOption("NON_IT");
+  await expect(
+    page.getByRole("link", { name: "Cashier", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Engineer", exact: true }),
+  ).not.toBeVisible();
+  await expect(
+    page.getByRole("article", { name: "Total opportunities", exact: true }),
+  ).toContainText("2");
+  await page.getByLabel("Filter by stage").selectOption("APPLIED");
+  await expect(
+    page.getByText("No matching applications", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Show all applications" }).click();
+  await expect(page.getByRole("table", { name: "Applications", exact: true }).getByRole("row")).toHaveCount(3);
+  await page.getByLabel("Sort by").selectOption("oldest");
+  await expect(page.getByRole("table", { name: "Applications", exact: true }).getByRole("row").nth(1)).toContainText(
+    "Cashier",
+  );
 });

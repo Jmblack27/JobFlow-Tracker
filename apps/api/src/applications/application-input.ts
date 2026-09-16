@@ -6,6 +6,7 @@ export interface ApplicationInput {
   position?: string;
   location?: string | null;
   jobUrl?: string | null;
+  platform?: string | null;
   status?: ApplicationStatus;
   category?: JobCategory;
   jobDescription?: string | null;
@@ -24,6 +25,7 @@ export function parseApplicationInput(
     'position',
     'location',
     'jobUrl',
+    'platform',
     'status',
     'jobDescription',
     'category',
@@ -40,6 +42,7 @@ export function parseApplicationInput(
     'position',
     'location',
     'jobUrl',
+    'platform',
   ] as const) {
     const value = input[key];
     const required = key === 'companyName' || key === 'position';
@@ -61,7 +64,11 @@ export function parseApplicationInput(
         key + ' must be a non-empty string of valid length',
       );
     }
-    result[key] = value.trim();
+    if (key === 'platform') {
+      result.platform = value.trim().replace(/\s+/g, ' ') || null;
+    } else {
+      result[key] = value.trim();
+    }
   }
   if (input.jobDescription !== undefined) {
     if (input.jobDescription === null) result.jobDescription = null;

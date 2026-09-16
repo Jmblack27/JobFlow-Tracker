@@ -151,3 +151,11 @@ Draft endpoints: POST /application-drafts/prompt, POST /application-drafts/previ
 Applications support IT, Non-IT and Uncategorized independently of their status. Use the board filters to separate your searches, and change Job category in the creation form or Overview → Edit details. Existing applications default to Uncategorized; no roles are inferred during migration. ChatGPT can suggest a category from the actual duties, which you can correct before saving. Resume prompts support all fields and prioritize truthful transferable skills for non-IT roles.
 
 Apply the additive migration with `pnpm --filter api db:migrate`.
+
+### Applications table and dashboard
+
+The home page shows one searchable table with category and stage filters, sorting, inline stage changes, and links to application details. The overview always summarizes all applications, independent of table filters.
+
+Metrics reflect current statuses: sent includes every stage beyond Wishlist (including Withdrawn); responses includes Screening, both interview stages, Offer and Rejected; rejected counts Rejected only. Awaiting reply counts Applied. These are estimates from current stages, not historical email or response tracking.
+
+Run the dashboard calculation tests without a browser using `node --experimental-strip-types --test apps/web/tests/dashboard.test.mjs` (Node 22).
