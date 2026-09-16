@@ -381,6 +381,6 @@ test("previews an offer before creating an application and retains failed saves"
   await expect(page.getByText("Resume draft", { exact: true })).toBeVisible();
   await page.getByLabel("Find an application").fill("no matches");
   await expect(
-    page.getByRole("heading", { name: "Support specialist" }),
+    page.getByRole("link", { name: "Support specialist", exact: true }),
   ).not.toBeVisible();
 });

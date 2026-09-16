@@ -7,6 +7,7 @@ export type Category = (typeof categories)[number][0];
 export const stages = [
   ["WISHLIST", "Wishlist"],
   ["APPLIED", "Applied"],
+  ["APPLIED_PENDING_TEST", "Applied — technical test pending"],
   ["SCREENING", "Screening"],
   ["TECHNICAL_INTERVIEW", "Technical interview"],
   ["FINAL_INTERVIEW", "Final interview"],
@@ -21,6 +22,7 @@ export type Application = {
   company: { name: string };
   location: string | null;
   jobUrl: string | null;
+  platform?: string | null;
   status: Status;
   category: Category;
   jobDescription: string | null;

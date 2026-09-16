@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import PlatformField from "../../platform-field";
 import type { FormEvent } from "react";
 import { request, errorMessage } from "../../lib/career";
 import { stages, categories } from "../../lib/applications";
@@ -17,6 +18,7 @@ export default function ApplicationOverview({
     position: application.position,
     location: application.location || "",
     jobUrl: application.jobUrl || "",
+    platform: application.platform || "",
     status: application.status,
     category: application.category,
   });
@@ -75,6 +77,7 @@ export default function ApplicationOverview({
                   />
                 </label>
               ))}
+              <PlatformField value={draft.platform} onChange={(platform) => setDraft({ ...draft, platform })} />
               <label>
                 Job category
                 <select
@@ -119,6 +122,7 @@ export default function ApplicationOverview({
                     position: application.position,
                     location: application.location || "",
                     jobUrl: application.jobUrl || "",
+    platform: application.platform || "",
                     status: application.status,
                     category: application.category,
                   });
@@ -131,6 +135,7 @@ export default function ApplicationOverview({
         </form>
       ) : (
         <dl className="profile-grid">
+          <div><dt className="muted">Application platform</dt><dd>{application.platform || "Not specified"}</dd></div>
           <div>
             <dt className="muted">Job category</dt>
             <dd>

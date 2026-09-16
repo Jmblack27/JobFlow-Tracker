@@ -42,7 +42,10 @@ const previewSchema = descriptionSchema.extend({
   response: z.string().trim().min(1).max(80000),
 });
 const saveSchema = previewSchema.extend({
-  application: detailsSchema.extend({ status: z.enum(ApplicationStatus) }),
+  application: detailsSchema.extend({
+    status: z.enum(ApplicationStatus),
+    platform: z.string().trim().max(200).nullable().optional(),
+  }),
 });
 const draftSource = 'new-application-v1';
 
@@ -117,6 +120,7 @@ export class ApplicationDraftsService {
           jobUrl: details.jobUrl,
           status: details.status,
           category: details.category,
+          platform: details.platform,
           jobDescription: input.jobDescription,
           user: { connect: { id: user.id } },
           company: { create: { name: details.companyName! } },

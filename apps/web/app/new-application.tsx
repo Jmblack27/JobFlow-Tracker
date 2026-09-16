@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import PlatformField from "./platform-field";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { request, errorMessage } from "./lib/career";
@@ -14,12 +15,13 @@ type Details = {
   position: string;
   location: string;
   jobUrl: string;
+  platform: string;
   status: Status;
   category: Category;
 };
 type Preview = {
   sourceId: string;
-  application: Omit<Details, "status">;
+  application: Omit<Details, "status" | "platform">;
   analysis: Analysis["content"];
   resume: ResumeContent;
 };
@@ -40,6 +42,7 @@ export default function NewApplication({
     position: "",
     location: "",
     jobUrl: "",
+    platform: "",
     status: "WISHLIST",
     category: "UNCATEGORIZED",
   });
@@ -57,6 +60,7 @@ export default function NewApplication({
     details.position ||
     details.location ||
     details.jobUrl ||
+    details.platform ||
     details.status !== "WISHLIST" ||
     details.category !== "UNCATEGORIZED"
   );
@@ -200,6 +204,7 @@ export default function NewApplication({
           />
         </label>
       ))}
+      <PlatformField value={details.platform} onChange={(platform) => setDetails({ ...details, platform })} />
       <label>
         Job category
         <select
