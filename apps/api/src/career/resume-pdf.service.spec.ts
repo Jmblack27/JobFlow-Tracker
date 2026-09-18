@@ -2,6 +2,16 @@ import { ResumePdfService } from './resume-pdf.service';
 import { profileFixture, resumeFixture } from '../../test/career.fixtures';
 
 describe('Resume PDF', () => {
+  it('keeps a concise resume on one page with traditional typography', async () => {
+    const buffer = await new ResumePdfService().render(
+      profileFixture,
+      resumeFixture,
+    );
+    const pdf = buffer.toString('latin1');
+    expect(pdf.match(/\/Type \/Page\b/g)).toHaveLength(1);
+    expect(pdf).toContain('/BaseFont /Times-Roman');
+    expect(pdf).toContain('/BaseFont /Times-Bold');
+  });
   it('produces a PDF with real text and automatic multi-page overflow', async () => {
     const content = {
       ...resumeFixture,
